@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TMProject</string>
+    <string name="error_string">Something has gone awry</string>
+</resources>
