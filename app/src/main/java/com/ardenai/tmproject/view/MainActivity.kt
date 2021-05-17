@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getRecyclerViewPopulated() {
-        mainViewModel.getTMData(::onTMDataSuccess, ::showGenericErrorToast)
+        mainViewModel.getTMData(::onTMDataSuccess, ::showGenericErrorToast, this)
     }
 
     fun onTMDataSuccess(tmData: TMData) {
@@ -49,9 +49,11 @@ class MainActivity : AppCompatActivity() {
         recycView.visibility = View.VISIBLE
     }
 
-    fun showGenericErrorToast() {
+    fun showGenericErrorToast(errorString: String) {
+        loadingSpinner.visibility = View.GONE
         Toast.makeText(
-            this@MainActivity, getString(R.string.error_string),
+            this@MainActivity,
+            errorString,
             Toast.LENGTH_SHORT
         ).show()
     }

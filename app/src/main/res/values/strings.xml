@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">TMProject</string>
-    <string name="error_string">Something has gone awry</string>
+
+    <string name="get_data_failed">getData response failed with error: %1$s</string>
+    <string name="get_data_failed_with_cache">Loaded Cache; getData response failed with error code: %1$s</string>
+    <string name="get_data_error_no_network">No valid network connection</string>
+    <string name="get_data_error_no_network_with_cache">No valid network connection, loading cache</string>
 </resources>

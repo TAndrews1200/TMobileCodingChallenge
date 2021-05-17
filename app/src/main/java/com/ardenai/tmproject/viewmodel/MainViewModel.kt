@@ -1,46 +1,64 @@
 package com.ardenai.tmproject.viewmodel
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
-import com.ardenai.tmproject.model.listDataClasses.Page
-import com.ardenai.tmproject.model.listDataClasses.TMData
+import com.ardenai.tmproject.R
 import com.ardenai.tmproject.model.db.Cache
 import com.ardenai.tmproject.model.db.CacheDatabase.Companion.getInstance
+import com.ardenai.tmproject.model.listDataClasses.TMData
 import com.ardenai.tmproject.network.ApiManager
+import com.ardenai.tmproject.network.NetworkUtils
 import com.google.gson.Gson
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
+import java.io.IOException
 
 class MainViewModel : ViewModel() {
     private val gson = Gson()
+
+    val compositeDisposable = CompositeDisposable()
+
     fun getTMData(
         onSuccess: (TMData) -> Unit,
-        onError: () -> Unit
+        displayToast: (String) -> Unit,
+        context: Context
     ) {
-        ApiManager.api.getData().enqueue(object : Callback<TMData> {
-
-            override fun onFailure(call: Call<TMData>, t: Throwable) {
-                readFromCache()?.let {
-                    onSuccess(it)
-                }?: onError()
-            }
-
-            override fun onResponse(call: Call<TMData>, response: Response<TMData>) {
-                if (response.isSuccessful) {
-                    val tmData = response.body() ?: TMData(Page(listOf()))
-                    addToCache(tmData)
-                    onSuccess(tmData)
-
-                } else {
-                    readFromCache()?.let {
-                        onSuccess(it)
-                    }?: onError()
-                }
-            }
-
-
-        })
+        if (NetworkUtils.hasValidNetwork(context)) {
+            compositeDisposable.add(
+                ApiManager.api.getData()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                    onSuccess = { tmData ->
+                        addToCache(tmData)
+                        onSuccess(tmData)
+                    },
+                    onError = {error ->
+                        readFromCache()?.let {
+                            displayToast(
+                                context.getString(
+                                    R.string.get_data_failed_with_cache,
+                                    error.message
+                                )
+                            )
+                            onSuccess(it)
+                        } ?: displayToast(
+                            context.getString(
+                                    R.string.get_data_failed,
+                                    error.message
+                            )
+                        )
+                    }
+                ))
+        } else {
+            readFromCache()?.let() {
+                displayToast(context.getString(R.string.get_data_error_no_network_with_cache))
+                onSuccess(it)
+            } ?: displayToast(context.getString(R.string.get_data_error_no_network))
+        }
     }
 
     @VisibleForTesting
@@ -55,7 +73,12 @@ class MainViewModel : ViewModel() {
         return gson.fromJson(cache?.jsonData, TMData::class.java)
     }
 
-    companion object{
+    override fun onCleared() {
+        super.onCleared()
+        compositeDisposable.clear()
+    }
+
+    companion object {
         val CACHE_ID = 1
     }
 

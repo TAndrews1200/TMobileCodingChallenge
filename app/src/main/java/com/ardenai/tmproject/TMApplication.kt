@@ -1,10 +1,10 @@
 package com.ardenai.tmproject
 
-import android.app.Application
+import androidx.multidex.MultiDexApplication
 import com.ardenai.tmproject.model.db.CacheDatabase
 import com.ardenai.tmproject.network.ApiManager
 
-class TMApplication : Application() {
+class TMApplication : MultiDexApplication() {
 
     override fun onCreate() {
         super.onCreate()
